@@ -60,11 +60,11 @@ void main() {
   revealed = (revealed - 0.5) * (0.55 + 0.45 * vis) + 0.5 + (1.0 - vis) * 0.12;
   revealed = mix(vec3(0.95), revealed, uHasPhoto);
 
-  // Specular glint off the surface slope (warm to match the safelight). This
-  // carries most of the "water" read, so displacement can stay subtle.
-  float s = pow(clamp(abs(grad.x) + abs(grad.y), 0.0, 1.0) * uSpecK, 1.3);
-  s = clamp(s, 0.0, 1.0);
-  vec3 col = revealed + vec3(1.0, 0.86, 0.74) * s * 0.95;
+  // Caustic light glints off the surface slope (warm, to match the safelight).
+  // With displacement disabled, these moving highlights carry the water read.
+  float h = abs(grad.x) + abs(grad.y);
+  float s = pow(clamp(h * uSpecK, 0.0, 1.0), 0.8);
+  vec3 col = revealed + vec3(1.0, 0.92, 0.82) * s * 0.9;
 
   gl_FragColor = vec4(col, 1.0);
 }
@@ -185,7 +185,7 @@ const WebGLWater = forwardRef(function WebGLWater(
     gl.uniform1i(uni.uHeight, 1)
     gl.uniform1f(uni.uRefract, 3.0)
     gl.uniform1f(uni.uMaxOffset, 0.0)
-    gl.uniform1f(uni.uSpecK, 12.0)
+    gl.uniform1f(uni.uSpecK, 45.0)
 
     const api = { gl, prog, photoTex, heightTex, uni, hasPhoto: 0, start: 0 }
     apiRef.current = api
