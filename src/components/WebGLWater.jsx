@@ -35,8 +35,13 @@ void main() {
   float hD = texture2D(uHeight, vUv + vec2(0.0, t.y)).r;
   vec2 grad = vec2(hL - hR, hU - hD);
 
-  // Refraction: bend the lookup along the surface slope.
-  vec2 puv = clamp(vUv + grad * uRefract, 0.001, 0.999);
+  // Refraction: bend the lookup along the surface slope. Fade the offset out
+  // near the borders so we never sample off the edge of the photo (which would
+  // smear edge pixels into dark streaks).
+  float edge =
+    smoothstep(0.0, 0.14, vUv.x) * smoothstep(0.0, 0.14, 1.0 - vUv.x) *
+    smoothstep(0.0, 0.14, vUv.y) * smoothstep(0.0, 0.14, 1.0 - vUv.y);
+  vec2 puv = clamp(vUv + grad * uRefract * edge, 0.0, 1.0);
   vec3 photo = texture2D(uPhoto, vec2(puv.x, 1.0 - puv.y)).rgb;
 
   // Develop reveal: blank white -> low-contrast gray -> full color.
@@ -204,10 +209,10 @@ const WebGLWater = forwardRef(function WebGLWater(
     const frame = () => {
       const sim = simRef.current
       if (sim) {
-        if (++tick % 75 === 0) {
+        if (++tick % 150 === 0) {
           const x = 2 + Math.floor(Math.random() * (sim.cols - 4))
           const y = 2 + Math.floor(Math.random() * (sim.rows - 4))
-          sim.b1[y * sim.cols + x] += 26
+          sim.b1[y * sim.cols + x] += 12
         }
         const { cols, rows, b1, b2, px } = sim
         for (let y = 1; y < rows - 1; y++) {
