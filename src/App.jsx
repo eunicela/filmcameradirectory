@@ -1,9 +1,15 @@
 import { useMemo, useState } from 'react'
 import { cameras } from './data/cameras.js'
+import Darkroom from './components/Darkroom.jsx'
 
 export default function App() {
   const [query, setQuery] = useState('')
   const [type, setType] = useState('All')
+  const [view, setView] = useState('directory')
+
+  if (view === 'darkroom') {
+    return <Darkroom onClose={() => setView('directory')} />
+  }
 
   const types = useMemo(
     () => ['All', ...Array.from(new Set(cameras.map((c) => c.type)))],
@@ -26,8 +32,13 @@ export default function App() {
   return (
     <div className="app">
       <header className="hero">
-        <h1>📷 Film Camera Directory</h1>
-        <p>Browse classic film cameras by name, brand, format, or type.</p>
+        <div className="hero-text">
+          <h1>📷 Film Camera Directory</h1>
+          <p>Browse classic film cameras by name, brand, format, or type.</p>
+        </div>
+        <button className="darkroom-link" onClick={() => setView('darkroom')}>
+          🌙 Darkroom
+        </button>
       </header>
 
       <div className="controls">

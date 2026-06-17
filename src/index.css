@@ -21,6 +21,14 @@ body {
   padding: 2.5rem 1.25rem 4rem;
 }
 
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .hero h1 {
   font-size: 2.4rem;
   margin: 0 0 0.25rem;
@@ -29,6 +37,25 @@ body {
 .hero p {
   margin: 0;
   color: #9ca3af;
+}
+
+.darkroom-link {
+  flex-shrink: 0;
+  padding: 0.65rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid #7f1d1d;
+  background: linear-gradient(180deg, #b91c1c, #7f1d1d);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(185, 28, 28, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.darkroom-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(220, 40, 30, 0.5);
 }
 
 .controls {
