@@ -26,6 +26,7 @@ uniform vec2 uGrid;
 uniform float uProgress;
 uniform float uHasPhoto;
 uniform float uRefract;
+uniform float uMaxOffset;
 uniform float uSpecK;
 
 void main() {
@@ -42,7 +43,12 @@ void main() {
   float edge =
     smoothstep(0.0, 0.14, vUv.x) * smoothstep(0.0, 0.14, 1.0 - vUv.x) *
     smoothstep(0.0, 0.14, vUv.y) * smoothstep(0.0, 0.14, 1.0 - vUv.y);
-  vec2 puv = clamp(vUv + grad * uRefract * edge, 0.0, 1.0);
+  // Hard-cap the displacement so steep wave fronts can never pull samples far
+  // off into dark corners (which caused black smearing).
+  vec2 off = grad * uRefract * edge;
+  float m = length(off);
+  if (m > uMaxOffset) off *= uMaxOffset / m;
+  vec2 puv = clamp(vUv + off, 0.0, 1.0);
   vec3 photo = texture2D(uPhoto, vec2(puv.x, 1.0 - puv.y)).rgb;
 
   // Develop reveal: blank white -> low-contrast gray -> full color.
@@ -168,13 +174,15 @@ const WebGLWater = forwardRef(function WebGLWater(
       uProgress: gl.getUniformLocation(prog, 'uProgress'),
       uHasPhoto: gl.getUniformLocation(prog, 'uHasPhoto'),
       uRefract: gl.getUniformLocation(prog, 'uRefract'),
+      uMaxOffset: gl.getUniformLocation(prog, 'uMaxOffset'),
       uSpecK: gl.getUniformLocation(prog, 'uSpecK'),
       uPhoto: gl.getUniformLocation(prog, 'uPhoto'),
       uHeight: gl.getUniformLocation(prog, 'uHeight'),
     }
     gl.uniform1i(uni.uPhoto, 0)
     gl.uniform1i(uni.uHeight, 1)
-    gl.uniform1f(uni.uRefract, 2.2)
+    gl.uniform1f(uni.uRefract, 3.0)
+    gl.uniform1f(uni.uMaxOffset, 0.07)
     gl.uniform1f(uni.uSpecK, 9.0)
 
     const api = { gl, prog, photoTex, heightTex, uni, hasPhoto: 0, start: 0 }
@@ -231,7 +239,8 @@ const WebGLWater = forwardRef(function WebGLWater(
         sim.b2 = b1
         const cur = sim.b1
         for (let i = 0; i < cur.length; i++) {
-          let r = 128 + cur[i] * HEIGHT_SCALE * 255
+          const h = cur[i]
+          let r = Number.isFinite(h) ? 128 + h * HEIGHT_SCALE * 255 : 128
           r = r < 0 ? 0 : r > 255 ? 255 : r
           const p = i * 4
           px[p] = r
