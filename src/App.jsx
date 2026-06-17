@@ -59,6 +59,9 @@ export default function App() {
       <ul className="grid">
         {results.map((c) => (
           <li key={c.id} className="card">
+            <div className="thumb">
+              <img src={c.image} alt={c.name} loading="lazy" />
+            </div>
             <div className="card-head">
               <h2>{c.name}</h2>
               <span className="year">{c.year}</span>
