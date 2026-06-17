@@ -3,8 +3,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 // WebGL water with true refraction: a CPU height-field feeds a height texture,
 // and the fragment shader bends the photo's sample coordinates along the
 // surface slope (refraction) while also developing the image from blank paper.
-const RES = 4 // px per simulation cell
-const DAMPING = 0.965
+const RES = 7 // px per simulation cell (coarser = smoother, less jagged)
+const DAMPING = 0.955
 const HEIGHT_SCALE = 0.0009
 const MAX_HEIGHT = 500 // bound waves so gradients never blow up into smears
 
@@ -60,9 +60,11 @@ void main() {
   revealed = (revealed - 0.5) * (0.55 + 0.45 * vis) + 0.5 + (1.0 - vis) * 0.12;
   revealed = mix(vec3(0.95), revealed, uHasPhoto);
 
-  // Specular glint off the surface slope (warm to match the safelight).
-  float s = pow(clamp((grad.x + grad.y) * uSpecK, 0.0, 1.0), 1.5);
-  vec3 col = revealed + vec3(1.0, 0.86, 0.74) * s * 0.7;
+  // Specular glint off the surface slope (warm to match the safelight). This
+  // carries most of the "water" read, so displacement can stay subtle.
+  float s = pow(clamp(abs(grad.x) + abs(grad.y), 0.0, 1.0) * uSpecK, 1.3);
+  s = clamp(s, 0.0, 1.0);
+  vec3 col = revealed + vec3(1.0, 0.86, 0.74) * s * 0.95;
 
   gl_FragColor = vec4(col, 1.0);
 }
@@ -182,8 +184,8 @@ const WebGLWater = forwardRef(function WebGLWater(
     gl.uniform1i(uni.uPhoto, 0)
     gl.uniform1i(uni.uHeight, 1)
     gl.uniform1f(uni.uRefract, 3.0)
-    gl.uniform1f(uni.uMaxOffset, 0.07)
-    gl.uniform1f(uni.uSpecK, 9.0)
+    gl.uniform1f(uni.uMaxOffset, 0.025)
+    gl.uniform1f(uni.uSpecK, 13.0)
 
     const api = { gl, prog, photoTex, heightTex, uni, hasPhoto: 0, start: 0 }
     apiRef.current = api
@@ -214,15 +216,9 @@ const WebGLWater = forwardRef(function WebGLWater(
     }
 
     let raf
-    let tick = 0
     const frame = () => {
       const sim = simRef.current
       if (sim) {
-        if (++tick % 150 === 0) {
-          const x = 2 + Math.floor(Math.random() * (sim.cols - 4))
-          const y = 2 + Math.floor(Math.random() * (sim.rows - 4))
-          sim.b1[y * sim.cols + x] += 12
-        }
         const { cols, rows, b1, b2, px } = sim
         for (let y = 1; y < rows - 1; y++) {
           for (let x = 1; x < cols - 1; x++) {
