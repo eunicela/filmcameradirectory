@@ -177,6 +177,15 @@
   opacity: 0;
 }
 
+.photo-gl {
+  position: absolute;
+  inset: 6px;
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
+  display: block;
+  border-radius: 2px;
+}
+
 /* Developing reveal: blank -> faint gray -> contrast -> full */
 .film-paper.phase-developing img {
   animation: develop 4.5s ease-in forwards;
