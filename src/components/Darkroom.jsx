@@ -1,35 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { cameras } from '../data/cameras.js'
 import { useReducedMotion } from '../hooks/useReducedMotion.js'
 import WaterCanvas from './WaterCanvas.jsx'
-import WebGLWater from './WebGLWater.jsx'
 import '../darkroom.css'
 
 const DEVELOP_MS = 4500
 
-function supportsWebGL() {
-  try {
-    const c = document.createElement('canvas')
-    return !!(
-      window.WebGLRenderingContext &&
-      (c.getContext('webgl') || c.getContext('experimental-webgl'))
-    )
-  } catch {
-    return false
-  }
-}
-
 export default function Darkroom({ onClose }) {
   const reduced = useReducedMotion()
-  const webgl = useMemo(supportsWebGL, [])
-  const useGL = webgl && !reduced
   const [camera, setCamera] = useState(null)
   const [phase, setPhase] = useState('idle') // idle | developing | developed
-  const [developKey, setDevelopKey] = useState(0)
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
   const trayRef = useRef(null)
   const waterRef = useRef(null)
-  const glRef = useRef(null)
   const lastMove = useRef(0)
   const timer = useRef(null)
 
@@ -45,7 +28,6 @@ export default function Darkroom({ onClose }) {
       }
       return next ?? cameras[0]
     })
-    setDevelopKey((k) => k + 1)
     setPhase('developing')
     timer.current = setTimeout(
       () => setPhase('developed'),
@@ -63,30 +45,25 @@ export default function Darkroom({ onClose }) {
     })
   }, [])
 
-  const drop = useCallback((e, water, gl) => {
-    waterRef.current?.addDrop(e.clientX, e.clientY, water)
-    glRef.current?.addDrop(e.clientX, e.clientY, gl)
-  }, [])
-
   const onPointerMove = useCallback(
     (e) => {
       if (reduced) return
       updateTilt(e)
       const now = performance.now()
-      if (now - lastMove.current < 24) return
+      if (now - lastMove.current < 26) return
       lastMove.current = now
-      drop(e, 150, 320)
+      waterRef.current?.addDrop(e.clientX, e.clientY, 150)
     },
-    [reduced, updateTilt, drop],
+    [reduced, updateTilt],
   )
 
   const onPointerDown = useCallback(
     (e) => {
       if (reduced) return
       updateTilt(e)
-      drop(e, 640, 600)
+      waterRef.current?.addDrop(e.clientX, e.clientY, 640)
     },
-    [reduced, updateTilt, drop],
+    [reduced, updateTilt],
   )
 
   return (
@@ -112,26 +89,16 @@ export default function Darkroom({ onClose }) {
             className={`film-paper phase-${phase} ${reduced ? 'reduced' : ''}`}
             style={{ '--rx': `${tilt.rx}deg`, '--ry': `${tilt.ry}deg` }}
           >
-            {!camera && (
-              <span className="paper-hint">
-                Press “Random camera” to develop a photo
-              </span>
-            )}
-            {camera && useGL && (
-              <WebGLWater
-                ref={glRef}
-                className="photo-gl"
-                camera={camera}
-                developKey={developKey}
-                duration={DEVELOP_MS}
-              />
-            )}
-            {camera && !useGL && (
+            {camera ? (
               <img
                 key={camera.id + phase}
                 src={camera.image}
-                alt={`Developed photo of ${camera.name}`}
+                alt={phase === 'idle' ? '' : `Developed photo of ${camera.name}`}
               />
+            ) : (
+              <span className="paper-hint">
+                Press “Random camera” to develop a photo
+              </span>
             )}
             <div className="develop-overlay" aria-hidden="true" />
           </div>
