@@ -19,6 +19,14 @@ describe('Darkroom', () => {
     expect(img.getAttribute('src')).toMatch(/\/cameras\//)
   })
 
+  it('spawns a ripple when the tray is pressed', () => {
+    const { container } = render(<Darkroom onClose={() => {}} />)
+    const tray = container.querySelector('.tray')
+    expect(container.querySelector('.ripple')).toBeNull()
+    fireEvent.pointerDown(tray, { clientX: 50, clientY: 40 })
+    expect(container.querySelector('.ripple.strong')).not.toBeNull()
+  })
+
   it('calls onClose when back button is clicked', () => {
     let closed = false
     render(<Darkroom onClose={() => (closed = true)} />)
