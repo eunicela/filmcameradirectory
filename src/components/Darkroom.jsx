@@ -63,9 +63,9 @@ export default function Darkroom({ onClose }) {
     })
   }, [])
 
-  const drop = useCallback((e, strength) => {
-    waterRef.current?.addDrop(e.clientX, e.clientY, strength)
-    glRef.current?.addDrop(e.clientX, e.clientY, strength)
+  const drop = useCallback((e, water, gl) => {
+    waterRef.current?.addDrop(e.clientX, e.clientY, water)
+    glRef.current?.addDrop(e.clientX, e.clientY, gl)
   }, [])
 
   const onPointerMove = useCallback(
@@ -73,9 +73,9 @@ export default function Darkroom({ onClose }) {
       if (reduced) return
       updateTilt(e)
       const now = performance.now()
-      if (now - lastMove.current < 26) return
+      if (now - lastMove.current < 24) return
       lastMove.current = now
-      drop(e, 150)
+      drop(e, 150, 300)
     },
     [reduced, updateTilt, drop],
   )
@@ -84,7 +84,7 @@ export default function Darkroom({ onClose }) {
     (e) => {
       if (reduced) return
       updateTilt(e)
-      drop(e, 640)
+      drop(e, 640, 700)
     },
     [reduced, updateTilt, drop],
   )

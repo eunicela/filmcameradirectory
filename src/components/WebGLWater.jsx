@@ -4,8 +4,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 // and the fragment shader bends the photo's sample coordinates along the
 // surface slope (refraction) while also developing the image from blank paper.
 const RES = 4 // px per simulation cell
-const DAMPING = 0.965
-const HEIGHT_SCALE = 0.0022
+const DAMPING = 0.974
+const HEIGHT_SCALE = 0.0026
 
 const VERT = `
 attribute vec2 aPos;
@@ -168,8 +168,8 @@ const WebGLWater = forwardRef(function WebGLWater(
     }
     gl.uniform1i(uni.uPhoto, 0)
     gl.uniform1i(uni.uHeight, 1)
-    gl.uniform1f(uni.uRefract, 0.5)
-    gl.uniform1f(uni.uSpecK, 7.0)
+    gl.uniform1f(uni.uRefract, 0.8)
+    gl.uniform1f(uni.uSpecK, 9.0)
 
     const api = { gl, prog, photoTex, heightTex, uni, hasPhoto: 0, start: 0 }
     apiRef.current = api
