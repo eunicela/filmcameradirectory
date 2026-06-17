@@ -5,15 +5,15 @@ import {
   useRef,
 } from 'react'
 
-// WebGL water with refraction: a CPU height-field feeds a height texture, and
-// the fragment shader bends the photo's sample coordinates along the (smoothed)
-// surface slope. The gradient is sampled over a wide spacing so the distortion
-// flows smoothly instead of tearing, and the offset is magnitude-clamped so it
-// can never pull samples far enough to smear.
+// WebGL water covering the whole tray interior: a CPU height-field feeds a
+// height texture, and the fragment shader renders the ridged tray bottom, the
+// dark developer fluid, and the floating photo, all refracted by the surface
+// slope so the ripples distort the entire scene (not just the paper).
 const RES = 8 // px per simulation cell (coarse = smooth waves)
-const DAMPING = 0.96
+const DAMPING = 0.965
 const HEIGHT_SCALE = 0.0009
 const MAX_HEIGHT = 500
+const STEP_MS = 40 // fixed sim timestep; larger = slower waves
 
 const VERT = `
 attribute vec2 aPos;
@@ -35,6 +35,42 @@ uniform float uHasPhoto;
 uniform float uRefract;
 uniform float uMaxOffset;
 uniform float uSpecK;
+uniform vec4 uPaper;   // x, y, w, h in UV
+uniform float uRidges; // ridge count across the tray
+
+vec3 reveal(vec3 photo) {
+  float vis = smoothstep(0.0, 1.0, uProgress);
+  float colorMix = smoothstep(0.35, 1.0, uProgress);
+  float lum = dot(photo, vec3(0.299, 0.587, 0.114));
+  vec3 toned = mix(vec3(lum), photo, colorMix);
+  vec3 r = mix(vec3(0.95), toned, vis);
+  r = (r - 0.5) * (0.55 + 0.45 * vis) + 0.5 + (1.0 - vis) * 0.12;
+  return mix(vec3(0.95), r, uHasPhoto);
+}
+
+vec3 scene(vec2 p) {
+  // Dark developer fluid, deeper toward the bottom.
+  vec3 liq = mix(vec3(0.13, 0.045, 0.035), vec3(0.025, 0.007, 0.006),
+    clamp(p.y, 0.0, 1.0));
+  // Ridged tray bottom: soft vertical channels.
+  float ridge = 0.5 + 0.5 * sin(p.x * uRidges * 6.2831853);
+  liq *= 0.78 + 0.22 * ridge;
+  // Subtle channel shadow lines.
+  liq -= smoothstep(0.46, 0.5, abs(fract(p.x * uRidges) - 0.5)) * 0.04;
+
+  // Floating photo paper.
+  vec2 rel = (p - uPaper.xy) / uPaper.zw;
+  if (rel.x > 0.0 && rel.x < 1.0 && rel.y > 0.0 && rel.y < 1.0) {
+    float b = 0.05;
+    vec2 ph = (rel - b) / (1.0 - 2.0 * b);
+    if (ph.x > 0.0 && ph.x < 1.0 && ph.y > 0.0 && ph.y < 1.0) {
+      vec3 photo = texture2D(uPhoto, vec2(ph.x, 1.0 - ph.y)).rgb;
+      return reveal(photo);
+    }
+    return vec3(0.93); // paper border
+  }
+  return liq;
+}
 
 void main() {
   vec2 t = 1.0 / uGrid;
@@ -45,29 +81,15 @@ void main() {
   float hD = texture2D(uHeight, vUv + vec2(0.0, t.y * sp)).r;
   vec2 grad = vec2(hL - hR, hU - hD);
 
-  // Fade the offset out near borders so we never sample off-edge.
-  float edge =
-    smoothstep(0.0, 0.12, vUv.x) * smoothstep(0.0, 0.12, 1.0 - vUv.x) *
-    smoothstep(0.0, 0.12, vUv.y) * smoothstep(0.0, 0.12, 1.0 - vUv.y);
-  vec2 off = grad * uRefract * edge;
+  vec2 off = grad * uRefract;
   float m = length(off);
   if (m > uMaxOffset) off *= uMaxOffset / m;
-  vec2 puv = clamp(vUv + off, 0.0, 1.0);
-  vec3 photo = texture2D(uPhoto, vec2(puv.x, 1.0 - puv.y)).rgb;
-
-  // Develop reveal: blank white -> low-contrast gray -> full color.
-  float vis = smoothstep(0.0, 1.0, uProgress);
-  float colorMix = smoothstep(0.35, 1.0, uProgress);
-  float lum = dot(photo, vec3(0.299, 0.587, 0.114));
-  vec3 toned = mix(vec3(lum), photo, colorMix);
-  vec3 revealed = mix(vec3(0.95), toned, vis);
-  revealed = (revealed - 0.5) * (0.55 + 0.45 * vis) + 0.5 + (1.0 - vis) * 0.12;
-  revealed = mix(vec3(0.95), revealed, uHasPhoto);
+  vec3 col = scene(vUv + off);
 
   // Bright caustic glints off the surface slope (warm, to match safelight).
   float hh = abs(grad.x) + abs(grad.y);
   float s = pow(clamp(hh * uSpecK, 0.0, 1.0), 0.85);
-  vec3 col = revealed + vec3(1.0, 0.9, 0.8) * s * 0.7;
+  col += vec3(1.0, 0.9, 0.8) * s * 0.6;
 
   gl_FragColor = vec4(col, 1.0);
 }
@@ -152,7 +174,7 @@ const WebGLWater = forwardRef(function WebGLWater(
     gl.bindTexture(gl.TEXTURE_2D, photoTex)
     gl.texImage2D(
       gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-      new Uint8Array([242, 242, 242, 255]),
+      new Uint8Array([238, 238, 238, 255]),
     )
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
@@ -173,6 +195,8 @@ const WebGLWater = forwardRef(function WebGLWater(
       uRefract: gl.getUniformLocation(prog, 'uRefract'),
       uMaxOffset: gl.getUniformLocation(prog, 'uMaxOffset'),
       uSpecK: gl.getUniformLocation(prog, 'uSpecK'),
+      uPaper: gl.getUniformLocation(prog, 'uPaper'),
+      uRidges: gl.getUniformLocation(prog, 'uRidges'),
       uPhoto: gl.getUniformLocation(prog, 'uPhoto'),
       uHeight: gl.getUniformLocation(prog, 'uHeight'),
     }
@@ -181,6 +205,7 @@ const WebGLWater = forwardRef(function WebGLWater(
     gl.uniform1f(uni.uRefract, 3.5)
     gl.uniform1f(uni.uMaxOffset, 0.06)
     gl.uniform1f(uni.uSpecK, 26.0)
+    gl.uniform1f(uni.uRidges, 7.0)
 
     const api = { gl, prog, photoTex, heightTex, uni, hasPhoto: 0, start: 0 }
     apiRef.current = api
@@ -201,6 +226,10 @@ const WebGLWater = forwardRef(function WebGLWater(
         px: new Uint8Array(cols * rows * 4),
       }
       gl.viewport(0, 0, w, h)
+      // Centered landscape (4:3) photo sized relative to the tray width.
+      const pw = 0.6
+      const ph = (pw * w * 0.75) / h
+      gl.uniform4f(uni.uPaper, (1 - pw) / 2, (1 - ph) / 2, pw, ph)
     }
     setup()
 
@@ -210,27 +239,41 @@ const WebGLWater = forwardRef(function WebGLWater(
       ro.observe(canvas)
     }
 
+    const step = (sim) => {
+      const { cols, rows, b1, b2 } = sim
+      for (let y = 1; y < rows - 1; y++) {
+        for (let x = 1; x < cols - 1; x++) {
+          const i = y * cols + x
+          let v =
+            (b1[i - 1] + b1[i + 1] + b1[i - cols] + b1[i + cols]) / 2 - b2[i]
+          v *= DAMPING
+          if (v > MAX_HEIGHT) v = MAX_HEIGHT
+          else if (v < -MAX_HEIGHT) v = -MAX_HEIGHT
+          b2[i] = v
+        }
+      }
+      sim.b1 = b2
+      sim.b2 = b1
+    }
+
     let raf
+    let last = performance.now()
+    let acc = 0
     const frame = () => {
+      const now = performance.now()
+      acc += now - last
+      last = now
       const sim = simRef.current
       if (sim) {
-        const { cols, rows, b1, b2, px } = sim
-        for (let y = 1; y < rows - 1; y++) {
-          for (let x = 1; x < cols - 1; x++) {
-            const i = y * cols + x
-            let v =
-              (b1[i - 1] + b1[i + 1] + b1[i - cols] + b1[i + cols]) / 2 - b2[i]
-            v *= DAMPING
-            if (v > MAX_HEIGHT) v = MAX_HEIGHT
-            else if (v < -MAX_HEIGHT) v = -MAX_HEIGHT
-            b2[i] = v
-          }
+        let steps = 0
+        while (acc >= STEP_MS && steps < 4) {
+          step(sim)
+          acc -= STEP_MS
+          steps++
         }
-        sim.b1 = b2
-        sim.b2 = b1
-        const cur = sim.b1
-        for (let i = 0; i < cur.length; i++) {
-          const hgt = cur[i]
+        const { cols, rows, b1, px } = sim
+        for (let i = 0; i < b1.length; i++) {
+          const hgt = b1[i]
           let r = Number.isFinite(hgt) ? 128 + hgt * HEIGHT_SCALE * 255 : 128
           r = r < 0 ? 0 : r > 255 ? 255 : r
           const p = i * 4

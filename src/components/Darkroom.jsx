@@ -70,22 +70,22 @@ export default function Darkroom({ onClose }) {
   const onPointerMove = useCallback(
     (e) => {
       if (reduced) return
-      updateTilt(e)
+      if (!useGL) updateTilt(e)
       const now = performance.now()
       if (now - lastMove.current < 24) return
       lastMove.current = now
       drop(e, 150, 360)
     },
-    [reduced, updateTilt, drop],
+    [reduced, useGL, updateTilt, drop],
   )
 
   const onPointerDown = useCallback(
     (e) => {
       if (reduced) return
-      updateTilt(e)
+      if (!useGL) updateTilt(e)
       drop(e, 640, 760)
     },
-    [reduced, updateTilt, drop],
+    [reduced, useGL, updateTilt, drop],
   )
 
   return (
@@ -104,39 +104,46 @@ export default function Darkroom({ onClose }) {
         onPointerMove={onPointerMove}
         onPointerDown={onPointerDown}
       >
-        <div className="liquid" aria-hidden="true" />
-
-        <div className="paper-wrap">
-          <div
-            className={`film-paper phase-${phase} ${reduced ? 'reduced' : ''}`}
-            style={{ '--rx': `${tilt.rx}deg`, '--ry': `${tilt.ry}deg` }}
-          >
+        {useGL ? (
+          <>
+            <WebGLWater
+              ref={glRef}
+              className="scene-gl"
+              camera={camera}
+              developKey={developKey}
+              duration={DEVELOP_MS}
+            />
             {!camera && (
-              <span className="paper-hint">
+              <span className="paper-hint gl-hint">
                 Press “Random camera” to develop a photo
               </span>
             )}
-            {camera && useGL && (
-              <WebGLWater
-                ref={glRef}
-                className="photo-gl"
-                camera={camera}
-                developKey={developKey}
-                duration={DEVELOP_MS}
-              />
-            )}
-            {camera && !useGL && (
-              <img
-                key={camera.id + phase}
-                src={camera.image}
-                alt={`Developed photo of ${camera.name}`}
-              />
-            )}
-            <div className="develop-overlay" aria-hidden="true" />
-          </div>
-        </div>
-
-        {!reduced && <WaterCanvas ref={waterRef} className="water" active />}
+          </>
+        ) : (
+          <>
+            <div className="liquid" aria-hidden="true" />
+            <div className="paper-wrap">
+              <div
+                className={`film-paper phase-${phase} ${reduced ? 'reduced' : ''}`}
+                style={{ '--rx': `${tilt.rx}deg`, '--ry': `${tilt.ry}deg` }}
+              >
+                {camera ? (
+                  <img
+                    key={camera.id + phase}
+                    src={camera.image}
+                    alt={`Developed photo of ${camera.name}`}
+                  />
+                ) : (
+                  <span className="paper-hint">
+                    Press “Random camera” to develop a photo
+                  </span>
+                )}
+                <div className="develop-overlay" aria-hidden="true" />
+              </div>
+            </div>
+            {!reduced && <WaterCanvas ref={waterRef} className="water" active />}
+          </>
+        )}
       </div>
 
       <div className="develop-controls">
