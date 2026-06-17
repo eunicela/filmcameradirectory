@@ -79,9 +79,8 @@ export default function Darkroom({ onClose }) {
 
       <header className="dr-top">
         <button className="dr-back" onClick={onClose}>
-          ← Back to directory
+          Back
         </button>
-        <h1 className="dr-title">Darkroom</h1>
       </header>
 
       <div

@@ -30,7 +30,7 @@ describe('Darkroom', () => {
   it('calls onClose when back button is clicked', () => {
     let closed = false
     render(<Darkroom onClose={() => (closed = true)} />)
-    fireEvent.click(screen.getByRole('button', { name: /back to directory/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^back$/i }))
     expect(closed).toBe(true)
   })
 })
