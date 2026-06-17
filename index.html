@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Film Camera Darkroom Prototype</title>
+    <meta
+      name="description"
+      content="A prototype directory for film cameras, roll notes, and darkroom workflows."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="brand" href="#top" aria-label="Film Camera Darkroom home">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span>Film Camera Darkroom</span>
+        </a>
+        <div class="nav-links">
+          <a href="#directory">Directory</a>
+          <a href="#darkroom">Darkroom</a>
+          <a href="#roll-desk">Roll desk</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero section">
+        <div class="hero-copy">
+          <p class="eyebrow">Prototype</p>
+          <h1>Plan a roll, pick a camera, and keep the darkroom moving.</h1>
+          <p>
+            A hands-on concept for cataloging film cameras, matching them with
+            film stocks, and guiding development sessions from pre-soak to wash.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#directory">Browse cameras</a>
+            <a class="button button-secondary" href="#darkroom">Open darkroom</a>
+          </div>
+        </div>
+        <aside class="hero-card" aria-label="Current roll summary">
+          <div class="camera-body">
+            <div class="camera-top"></div>
+            <div class="camera-lens">
+              <span></span>
+            </div>
+          </div>
+          <dl class="stats-grid">
+            <div>
+              <dt>Loaded</dt>
+              <dd id="loaded-film">HP5 Plus</dd>
+            </div>
+            <div>
+              <dt>Frames</dt>
+              <dd id="frame-count">12 / 36</dd>
+            </div>
+            <div>
+              <dt>Dev</dt>
+              <dd id="dev-time">11:00</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
+
+      <section id="directory" class="section panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Camera directory</p>
+            <h2>Find a body for the next roll.</h2>
+          </div>
+          <label class="search-field">
+            <span class="sr-only">Search cameras</span>
+            <input id="camera-search" type="search" placeholder="Search maker, model, mount..." />
+          </label>
+        </div>
+
+        <div class="filter-bar" aria-label="Camera filters">
+          <button class="chip active" type="button" data-filter="all">All</button>
+          <button class="chip" type="button" data-filter="35mm">35mm</button>
+          <button class="chip" type="button" data-filter="medium format">Medium format</button>
+          <button class="chip" type="button" data-filter="beginner">Beginner friendly</button>
+          <button class="chip" type="button" data-filter="mechanical">Mechanical</button>
+        </div>
+
+        <div id="camera-grid" class="camera-grid" aria-live="polite"></div>
+      </section>
+
+      <section id="darkroom" class="section split">
+        <div class="panel">
+          <p class="eyebrow">Darkroom bench</p>
+          <h2>Build a development recipe.</h2>
+          <p class="muted">
+            Choose a stock and developer to preview timing, agitation, and
+            temperature notes before you start the clock.
+          </p>
+
+          <form class="recipe-form" id="recipe-form">
+            <label>
+              Film stock
+              <select id="film-stock" name="film-stock"></select>
+            </label>
+            <label>
+              Developer
+              <select id="developer" name="developer"></select>
+            </label>
+          </form>
+
+          <article class="recipe-card" id="recipe-card" aria-live="polite"></article>
+        </div>
+
+        <div class="panel timer-panel">
+          <p class="eyebrow">Session timer</p>
+          <h2 id="timer-display">11:00</h2>
+          <p id="timer-label" class="muted">Ready for development</p>
+          <div class="timer-actions">
+            <button class="button button-primary" id="start-timer" type="button">Start</button>
+            <button class="button button-secondary" id="pause-timer" type="button">Pause</button>
+            <button class="button button-ghost" id="reset-timer" type="button">Reset</button>
+          </div>
+          <ol class="process-list" id="process-list"></ol>
+        </div>
+      </section>
+
+      <section id="roll-desk" class="section roll-desk">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Roll desk</p>
+            <h2>Capture notes before the negatives dry.</h2>
+          </div>
+        </div>
+
+        <div class="roll-grid">
+          <form class="panel roll-form" id="roll-form">
+            <label>
+              Roll title
+              <input id="roll-title" name="roll-title" type="text" value="Neighborhood walk" />
+            </label>
+            <label>
+              Camera
+              <select id="roll-camera" name="roll-camera"></select>
+            </label>
+            <label>
+              Lighting notes
+              <textarea id="roll-notes" name="roll-notes" rows="5">Late afternoon, mixed shade, metered for highlights.</textarea>
+            </label>
+            <button class="button button-primary" type="submit">Update desk</button>
+          </form>
+
+          <article class="panel note-preview" aria-live="polite">
+            <p class="eyebrow">Preview</p>
+            <h3 id="preview-title">Neighborhood walk</h3>
+            <dl>
+              <div>
+                <dt>Camera</dt>
+                <dd id="preview-camera"></dd>
+              </div>
+              <div>
+                <dt>Recommended stock</dt>
+                <dd id="preview-stock"></dd>
+              </div>
+              <div>
+                <dt>Notes</dt>
+                <dd id="preview-notes"></dd>
+              </div>
+            </dl>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Prototype for a film camera directory and darkroom companion.</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
