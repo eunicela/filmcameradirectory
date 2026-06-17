@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cameras } from '../data/cameras.js'
 import { useReducedMotion } from '../hooks/useReducedMotion.js'
+import WaterCanvas from './WaterCanvas.jsx'
 import '../darkroom.css'
 
 const DEVELOP_MS = 4500
-const MAX_RIPPLES = 24
-let rippleId = 0
 
 export default function Darkroom({ onClose }) {
   const reduced = useReducedMotion()
   const [camera, setCamera] = useState(null)
   const [phase, setPhase] = useState('idle') // idle | developing | developed
-  const [ripples, setRipples] = useState([])
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 })
   const trayRef = useRef(null)
+  const waterRef = useRef(null)
   const lastMove = useRef(0)
   const timer = useRef(null)
 
@@ -36,42 +35,36 @@ export default function Darkroom({ onClose }) {
     )
   }, [reduced])
 
-  const spawnRipple = useCallback((e, strong) => {
+  const updateTilt = useCallback((e) => {
     const el = trayRef.current
     if (!el) return
     const rect = el.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    const id = ++rippleId
-    setRipples((r) => [...r.slice(-(MAX_RIPPLES - 1)), { id, x, y, strong }])
     setTilt({
-      ry: (x / rect.width - 0.5) * 9,
-      rx: -(y / rect.height - 0.5) * 9,
+      ry: ((e.clientX - rect.left) / rect.width - 0.5) * 9,
+      rx: -((e.clientY - rect.top) / rect.height - 0.5) * 9,
     })
   }, [])
 
   const onPointerMove = useCallback(
     (e) => {
       if (reduced) return
+      updateTilt(e)
       const now = performance.now()
-      if (now - lastMove.current < 55) return
+      if (now - lastMove.current < 28) return
       lastMove.current = now
-      spawnRipple(e, false)
+      waterRef.current?.addDrop(e.clientX, e.clientY, 150)
     },
-    [reduced, spawnRipple],
+    [reduced, updateTilt],
   )
 
   const onPointerDown = useCallback(
     (e) => {
       if (reduced) return
-      spawnRipple(e, true)
+      updateTilt(e)
+      waterRef.current?.addDrop(e.clientX, e.clientY, 620)
     },
-    [reduced, spawnRipple],
+    [reduced, updateTilt],
   )
-
-  const removeRipple = useCallback((id) => {
-    setRipples((r) => r.filter((x) => x.id !== id))
-  }, [])
 
   return (
     <div className="darkroom">
@@ -89,16 +82,7 @@ export default function Darkroom({ onClose }) {
         onPointerMove={onPointerMove}
         onPointerDown={onPointerDown}
       >
-        <div className="liquid" aria-hidden="true">
-          {ripples.map((r) => (
-            <span
-              key={r.id}
-              className={`ripple ${r.strong ? 'strong' : ''}`}
-              style={{ left: `${r.x}px`, top: `${r.y}px` }}
-              onAnimationEnd={() => removeRipple(r.id)}
-            />
-          ))}
-        </div>
+        <div className="liquid" aria-hidden="true" />
 
         <div className="paper-wrap">
           <div
@@ -119,6 +103,8 @@ export default function Darkroom({ onClose }) {
             <div className="develop-overlay" aria-hidden="true" />
           </div>
         </div>
+
+        <WaterCanvas ref={waterRef} className="water" active={!reduced} />
       </div>
 
       <div className="develop-controls">
