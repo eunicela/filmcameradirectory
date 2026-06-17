@@ -7,10 +7,6 @@ export default function App() {
   const [type, setType] = useState('All')
   const [view, setView] = useState('directory')
 
-  if (view === 'darkroom') {
-    return <Darkroom onClose={() => setView('directory')} />
-  }
-
   const types = useMemo(
     () => ['All', ...Array.from(new Set(cameras.map((c) => c.type)))],
     [],
@@ -28,6 +24,10 @@ export default function App() {
       return matchesType && matchesQuery
     })
   }, [query, type])
+
+  if (view === 'darkroom') {
+    return <Darkroom onClose={() => setView('directory')} />
+  }
 
   return (
     <div className="app">
