@@ -5,8 +5,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react'
 // surface slope (refraction) while also developing the image from blank paper.
 const RES = 4 // px per simulation cell
 const DAMPING = 0.965
-const HEIGHT_SCALE = 0.0006
-const MAX_HEIGHT = 700 // bound waves so gradients never blow up into smears
+const HEIGHT_SCALE = 0.0009
+const MAX_HEIGHT = 500 // bound waves so gradients never blow up into smears
 
 const VERT = `
 attribute vec2 aPos;
@@ -174,8 +174,8 @@ const WebGLWater = forwardRef(function WebGLWater(
     }
     gl.uniform1i(uni.uPhoto, 0)
     gl.uniform1i(uni.uHeight, 1)
-    gl.uniform1f(uni.uRefract, 0.28)
-    gl.uniform1f(uni.uSpecK, 7.0)
+    gl.uniform1f(uni.uRefract, 2.2)
+    gl.uniform1f(uni.uSpecK, 9.0)
 
     const api = { gl, prog, photoTex, heightTex, uni, hasPhoto: 0, start: 0 }
     apiRef.current = api

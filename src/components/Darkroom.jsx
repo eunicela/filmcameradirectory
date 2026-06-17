@@ -75,7 +75,7 @@ export default function Darkroom({ onClose }) {
       const now = performance.now()
       if (now - lastMove.current < 24) return
       lastMove.current = now
-      drop(e, 150, 260)
+      drop(e, 150, 320)
     },
     [reduced, updateTilt, drop],
   )
