@@ -66,8 +66,8 @@
 .tray {
   position: relative;
   z-index: 1;
-  width: min(680px, 92vw);
-  height: min(440px, 56vh);
+  width: min(440px, 92vw);
+  height: min(620px, 74vh);
   border-radius: 28px;
   padding: 26px;
   touch-action: none;
@@ -165,7 +165,7 @@
 
 .film-paper {
   position: relative;
-  width: 62%;
+  width: 76%;
   aspect-ratio: 4 / 3;
   border-radius: 4px;
   background: #f6f4ef;
