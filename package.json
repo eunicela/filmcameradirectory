@@ -1,0 +1,10 @@
+{
+  "name": "filmcameradirectory",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Static prototype for a film camera directory and darkroom companion.",
+  "scripts": {
+    "check": "node --check app.js",
+    "serve": "python3 -m http.server 4173"
+  }
+}
