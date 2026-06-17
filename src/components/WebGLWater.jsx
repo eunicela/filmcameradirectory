@@ -184,8 +184,8 @@ const WebGLWater = forwardRef(function WebGLWater(
     gl.uniform1i(uni.uPhoto, 0)
     gl.uniform1i(uni.uHeight, 1)
     gl.uniform1f(uni.uRefract, 3.0)
-    gl.uniform1f(uni.uMaxOffset, 0.025)
-    gl.uniform1f(uni.uSpecK, 13.0)
+    gl.uniform1f(uni.uMaxOffset, 0.0)
+    gl.uniform1f(uni.uSpecK, 12.0)
 
     const api = { gl, prog, photoTex, heightTex, uni, hasPhoto: 0, start: 0 }
     apiRef.current = api
